@@ -6,3 +6,11 @@ random
 dingingen schrijven 
 omdat ik geen zin heb
 nog een testtest
+i start to feel a little sick
+and i dont know why
+but now i think i know
+it is because...
+i am not a 
+bozon!!!
+hihi
+hihihihhiihihih
