@@ -6,10 +6,10 @@ project:
   # description:
   # keywords: []
   authors: 
+    - name: Dominic Witzier
     - name: Sanne van DUijn
-    - name: Roel Smit
 
-  github: https://github.com/SDuijn-prog/PascalEnSanne
+  github: https://github.com/SDuijn-prog/PascalEnSanne.git
   plugins:
     - https://github.com/jupyter-book/myst-plugins/releases/download/page-last-updatedv1.1/page-last-updated.mjs
   toc:
