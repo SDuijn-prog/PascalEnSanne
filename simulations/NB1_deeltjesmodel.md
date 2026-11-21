@@ -663,12 +663,18 @@ Maak de code hieronder voor twee deeltjes die bewegen in een afgesloten doos. Be
 # Simulation parameters
 dt = 0.1         # time step
 num_steps = 500  # number of time steps
-particleA = ParticleClass(m=1.0, v=[0, 0], r=[0.0, 0.0],R=1.0)  
+particleA = ParticleClass(m=1.0, v=[0, 0], r=[0.0, 0.0],R=1.0) 
+particleB = ParticleClass(m=1.0, v=[1, 0], r=[0.0, 0.0],R=1.0) 
 ### YOUR CODE HERE ###
+a = np.array([0, -9.81])
 
-track_x = []
-track_y = []
+track_x_A = []
+track_y_A = []
+track_x_B = []
+track_y_B = []
 
+track_line_A, = ax.plot([], [], 'r--', linewidth=1)
+track_line_B, = ax.plot([], [], 'b--', linewidth=1)
 # Create the figure and axis
 fig, ax = plt.subplots()
 ax.set_xlim(-10, 10)
@@ -685,19 +691,27 @@ dotB, = ax.plot([], [], 'bo', markersize=10)
 
 # Initialization function for animation
 def init():
-    dot.set_data([], [])
-    return dot,
+    dotA.set_data([], [])
+    dotB.set_data([], [])
+    track_line.set_data([],[])
+    return dotA, dotB, track_line_A, track_line_B
 
 # Update function for each frame
 def update(frame):
     particleA.update_position()
     particleA.update_velocity(a)
 
-### YOUR CODE HERE ###
+    particleB.update_position()
+    particleB.update_velocity(a)
 
-    track_x.append(particleA.r[0])
-    track_y.append(particleA.r[1])
-    track_line.set_data(track_x, track_y)
+### YOUR CODE HERE ###
+    track_x_A.append(particleA.r[0])
+    track_y_A.append(particleA.r[1])
+    track_line_A.set_data(track_x_A, track_y_A)
+
+    track_x_B.append(particleB.r[0])
+    track_y_B.append(particleB.r[1])
+    track_line_B.set_data(track_x_B, track_y_B)
     
     dotA.set_data([particleA.r[0]], [particleA.r[1]])
     dotB.set_data([particleB.r[0]], [particleB.r[1]])
@@ -713,7 +727,7 @@ def update(frame):
     if particleB.r[1]**2>100: 
         particleB.v[1] = -particleB.v[1]
 
-    return dot, track_line
+    return dotA, dotB, track_line_A, track_line_B
 
 # Create animation
 ani = FuncAnimation(fig, update, frames=range(200), init_func=init, blit=True, interval=50)
@@ -744,21 +758,32 @@ Jouw antwoord.
 
 ```python tags=["NB1_botsingsvoorwaarde"]
 # Define a class for a particle
-
-# Maken van de class met botsing
+import numpy as np
 class ParticleClass:
     def __init__(self, m, v, r, R):
         self.m = m                  
         self.v = np.array(v, dtype=float)  
         self.r = np.array(r, dtype=float)  
-        self.R = R 
+        self.R = R  
+    
+    def update_velocity(self, a):
+        self.v += a*dt
 
     def update_position(self):
         self.r += self.v * dt  
 
     def collide_detection(self, other):
-        ### YOUR CODE HERE ###
-        return  dx**2+dy**2 < rr**2 
+#        return  dx**2+dy**2 < rr**2
+        distance = np.linalg.norm(self.r - other.r)
+        
+        if distance <= self.R + other.R:
+            return True
+        else:
+            return False
+
+if particleA.collide_detection(particleB):
+    particleA.v = -particleA.v
+    particleB.v = -particleB.v
 ```
 
 ```python
@@ -772,6 +797,7 @@ particleB = ParticleClass(m=1.0, v=[-1, 0], r=[0.0, 0.0],R=0.45)
 track_x = []
 track_y = []
 
+a = np.array([0, -9.81])
 
 # Creer de plot
 
@@ -792,13 +818,17 @@ dotB, = ax.plot([], [], 'bo', markersize=10)
 
 # Initaliseren voor de animatie
 def init():
-    dot.set_data([], [])
-    return dot,
+    dotA.set_data([], [])
+    dotB.set_data([], [])
+    return dotA, dotB
 
 # Updaten van de functie per frame
 def update(frame):
     particleA.update_position()
     particleB.update_position()
+
+    particleA.update_velocity(a)
+    particleB.update_velocity(a)
 
     track_x.append(particleA.r[0])
     track_y.append(particleA.r[1])
@@ -809,7 +839,8 @@ def update(frame):
 
     # botsing tussen de deeltjes onderling
     if particleA.collide_detection(particleB):
-        ### YOUR CODE HERE ###
+        particleA.v = -particleA.v
+        particleB.v = -particleB.v
 
 
     # botsing met de wand
@@ -824,7 +855,7 @@ def update(frame):
     if particleB.r[1]**2>100: 
         particleB.v[1] = -particleB.v[1]
 
-    return dot, track_line
+    return dotA, dotB, track_line
 
 # Creeer animatie
 ani = FuncAnimation(fig, update, frames=range(num_steps), init_func=init, blit=True, interval=50)
@@ -888,7 +919,7 @@ Wat is de beperkende factor in ons script om het aantal botsingen als functie va
 ```
 
 ```{solution} ex-deeltjes-12
-Jouw antwoord
+het huidige systeen houdt geen rekening met de massa's, daarnaast stopt het systeem na een bepaald aantal frames al weten we niet zeker of alle botsingen dan al hebben plaatsgevonden.
 ```
 
 
@@ -914,7 +945,7 @@ class ParticleClass:
 dt = 0.1         # time step
 num_steps = 530  # number of time steps
 m1 = 1.0
-m2 = 1.0
+m2 = 100.0
 
 particleA = ParticleClass(m=m1, v=[0, 0], r=[-4.0, 0.0],R=0.45)  
 particleB = ParticleClass(m=m2, v=[-1, 0], r=[-2.0, 0.0],R=0.45)  
@@ -964,23 +995,24 @@ def update(frame):
         particleA.v = vA_new
         particleB.v = vB_new
         ### YOUR CODE HERE ###
-
+        counter += 1
 
     # wall collision detection and response
     if particleA.r[0]**2>100: # Check if particle is outside the bounds, np.abs could be used but is slower
         particleA.v[0] = -particleA.v[0]
-        ### YOUR CODE HERE ###
+        counter += 1
     if particleA.r[1]**2>100: 
         particleA.v[1] = -particleA.v[1]
-        ### YOUR CODE HERE ###
+        counter += 1
 
     dot.set_data([particleB.r[0]], [particleB.r[1]])
     if particleB.r[0]**2>100: 
         particleB.v[0] = -particleB.v[0]
+        counter += 1
 
     if particleB.r[1]**2>100: 
-        particleB.v[1] = -particleB.v[1]
-
+        particleB.v[1] = -particleB.v[1],
+        counter += 1
     return dot, counter_text
 
 # Create animation
@@ -997,7 +1029,7 @@ Pas de bovenstaande code aan zodat $m_1 = 1$ en $m_2 = 50$. Run de code en geef 
 
 
 ```python tags=["NB1_eindantwoord"]
-#num_botsingen = ...
+#num_botsingen = 22. Als je m1=1 en m2=100 gebruikt zie je pi verschijnen!!
 ### YOUR CODE HERE ###
 ```
 
