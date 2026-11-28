@@ -1,3 +1,7 @@
+```python
+
+```
+
 # NB 2: Brownian motion
 
 ```python
