@@ -221,14 +221,27 @@ Schrijf een functie die de temperatuur van het gas in onze simulatie bepaalt:
 ```
 
 ```python tags=["NB3_tempfun"]
+k = 1.380649e-23
+f = 2
+
+
 def temperature(particles) -> float:
     temp = 0.0 
     ### YOUR CODE HERE ###
+    for p in particles:
+        m = p.m
+        v = p.v
+        vtot = np.dot(p.v,p.v)
+        templos = (m*vtot)/(f*k)
+        temp += templos
+    temp = temp / len(particles)
     return temp
+
 ```
 
 <!-- #region tags=[] -->
 ```{exercise} Temperatuurplot
+
 :label: ex-druktemp-2
 
 Gebruik deze functie om een simulatie te maken waarin je de temperatuur als functie van de tijdstap voor 100 tijdstappen plot.
@@ -236,23 +249,37 @@ Gebruik deze functie om een simulatie te maken waarin je de temperatuur als func
 <!-- #endregion -->
 
 ```python tags=["NB3_check_const_temp"]
+mSI = 4.81e-26
+vSI = 410
+tSI = 7.3e-14
+LSI = 10e-9
+
+
 # ruimte voor uitwerking
 
 particles = []
 temperatures = np.zeros(100, dtype=float)
 times = np.linspace(1, 100, 100)
 
+
+
+
+
 create_particles(particles)
 for i in range(100):
     take_time_step(particles)
+    temperatures[i] = temperature(particles)
     # vastleggen van temperatuur per tijdstap
     ### YOUR CODE HERE ###
+DTSI = times * 7.3e-14 #seconden
+TSI = temperatures * 4.81e-26*410**2  #kelvin
 
 plt.figure()
-plt.xlabel('Time')
-plt.ylabel('Temperature')
+plt.xlabel('Time (s)')
+plt.ylabel('Temperature (K)')
 # plotten van tijd tegen temperatuur
 ### YOUR CODE HERE ###
+plt.plot(DTSI,TSI)
 plt.show()
 ```
 
@@ -338,6 +365,8 @@ Maak nu een simulatie waarin je de druk als functie van de tijd toont gedurende 
 Je zal zien dat deze grafiek niet een mooie vlakke vorm zal hebben.
 Wat zou je als verklaring hiervoor geven?
 ```
+```Antwoord:```
+- een verklaring zou kunnen zijn dat er bij sommige steps geen deeltje tegen de wand aan botst, daardoor is de pressure dus volgens de berekening nul. Zodra er dan 1 of meer deeltjes wel tegen de muren aan botsen, piekt de druk.
 
 
 <!-- #endregion -->
@@ -346,13 +375,18 @@ Wat zou je als verklaring hiervoor geven?
 particles = []
 pressures = np.zeros(100, dtype=float)
 times = np.linspace(1, 100, 100)
-
+N = 400
+BOX_SIZE_0 = 10*np.sqrt(10)
 ### YOUR CODE HERE ###
+create_particles(particles)
+for i in range(100):
+    take_time_step(particles)
+    pressures[i] = pressure
+    
 
 plt.figure()
 plt.xlabel('Time [step]')
 plt.ylabel('Pressure [a.u.]')
-
 plt.plot(times, pressures, '-r')
 
 plt.show()
@@ -377,7 +411,8 @@ Zet je initiële waarden weer terug.
 
 ```python tags=[]
 ### YOUR CODE HERE ###
-
+N = 40
+BOX_SIZE_0 = 10
 ```
 
 Een goedkoper alternatief bestaat uit het middelen van de druk over de tijd.
@@ -408,7 +443,7 @@ def handle_walls(particles):
     for p in particles:
         left_right_collision(p)
         top_down_collision(p)    
-    alpha = 0.1
+    alpha = 0.01
     pressure = alpha * impulse_outward / (4 * BOX_SIZE_0 * DT) + (1-alpha) * pressure # omtrek volume is oppervlak (2D sim)
 ```
 
@@ -424,6 +459,17 @@ pressures = np.zeros(N_steps, dtype=float)
 times = np.linspace(1, N_steps, N_steps)
 
 create_particles(particles)
+for i in range(N_steps):
+    take_time_step(particles)
+    pressures[i] = pressure
+    
+
+plt.figure()
+plt.xlabel('Time [step]')
+plt.ylabel('Pressure [a.u.]')
+plt.plot(times, pressures, '-r')
+
+plt.show()
 
 ### YOUR CODE HERE ###
 
@@ -452,6 +498,20 @@ Leg op basis van de vormen die je ziet en de bijbehorende wiskunde uit dat dit e
 ### YOUR CODE HERE ###
 ```
 
+```python
+#opdracht 7
+gem_waarde_pressure = np.mean(pressures[100:]) #tip van AI om de eerste honderd te skippen omdat je op nul begon
+print(gem_waarde_pressure)
+
+
+echte_waarde_pressure = gem_waarde_pressure * ((mSI*vSI)/(tSI*LSI))
+print(echte_waarde_pressure)
+
+print("De dimensies komen al niet overeen met Bar, want de dimensie van de berekende waarde is in de 2D ruimte, wat inhoudt dat het zegmaar N/m is ipv N/m^2, hierdoor wijkt ook de echte waarde af. Ook simuleren we veelste weinig deeltjes, in de praktijk zitten er veel meer deeltjes in een fietsband bij die druk.")
+
+#opdracht 8
+print("de wiskundige benaming is logisch, want er wordt steeds een voorgaande waarde aan de volgende toegevoegd, daardoor wordt de invloed van oudere metingen steeds kleiner en kleiner en kom je uiteindelijk uit op een gemiddelde. (deze vraag vind ik best lastig)")
+```
 
 Om te voorspellen welke waarde de druk hier dan wel krijgt, moeten we de formule verder ontwikkelen. We hebben al gezien dat de druk ten gevolge van de stoot op de wand werd gegeven door:
 
@@ -479,7 +539,21 @@ Controleer of je uitkomst overeenkomt met de theorie en verifieer hiermee de cod
 ```
 
 ```python
-### YOUR CODE HERE ###
+
+def theoriedruk(BOX_SIZE_0):
+    mv2_tot = 0
+    for p in particles:
+        mv2_tot += p.m*np.dot(p.v,p.v)
+    return (mv2_tot)/(2*(BOX_SIZE_0**2))
+
+print(theoriedruk(BOX_SIZE_0))
+
+if np.abs(gem_waarde_pressure - theoriedruk(BOX_SIZE_0)) <0.02:
+    print("De code klopt!")
+else:
+    print("De code klopt niet... (ik heb geen idee waarom die niet klopt, ik zal hier graag op terug willen komen)")
+
+
 ```
 
 In [de formule voor de tweedimensionale druk](2d_pressure) kan je de structuur van de ideale gaswet herkennen. 
@@ -487,13 +561,17 @@ In [de formule voor de tweedimensionale druk](2d_pressure) kan je de structuur v
 ```{exercise}
 :label: ex-druktemp9b
 
-Herleid dezelfde formule af voor het driedimensionale geval. Laat zien welke relatie er geldt tussen de constanten voor het macroscopische (thermodynamische) model en het microscopische (mechanische) model.
+Herleid dezelfde formule af voor het driedimensionale geval. Laat zien welke relatie er geldt tussen de constanten voor het macroscopische (thermodynamische) model en het microscopische (mechanische) model:
+
+$$P = \frac{N m \langle v^2 \rangle}{3 V}$$
 ```
 
 
 ```{solution} ex-druktemp9b
 Geef hier de relatie tussen de constanten...
-### YOUR CODE HERE ###
+$$R = N_A k_B$$ en $$\frac{1}{2} m \langle v^2 \rangle = \frac{3}{2} k_B T$$
+
+### Als je de formule gelijk stelt aan nRT en NkbT, kan je na wat herleid werk concluderen dat de temperatuur van het systeem afhankelijk is van de kinetische energie van de deeltjes en vice versa ###
 ```
 
 
